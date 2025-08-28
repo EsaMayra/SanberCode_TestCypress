@@ -1,169 +1,202 @@
-// File: cypress/e2e/api/reqres_api.cy.js
+// Base URL endpoint untuk Reqres API
+const baseUrl = 'https://reqres.in/api';
 
-// Deskripsi Umum:
-// File ini berisi automation testing API menggunakan Cypress
-// Target API yang diuji adalah public API "https://reqres.in/"
-// Terdapat minimal 15 request untuk menguji berbagai endpoint
-// Pengujian mencakup method GET, POST, PUT, PATCH, dan DELETE
-// Setiap test case memverifikasi response status code dan isi body (jika relevan)
+// Header yang digunakan pada setiap request API, termasuk API key dan tipe konten JSON
+const headers = {
+  'x-api-key': 'reqres-free-v1',
+  'Content-Type': 'application/json'
+};
 
-describe('Automation API Testing Reqres.in', () => {
+describe('Reqres.in API Automation Test Suite', () => {
 
-  // Test Case 01: GET list users (page 1)
-  // Tujuan: Memastikan endpoint GET /users?page=1 berhasil mengembalikan data user dengan status 200
-  it('TC01 - GET List Users Page 1', () => {
-    cy.request('GET', 'https://reqres.in/api/users?page=1').then((response) => {
-      expect(response.status).to.eq(200)
-      expect(response.body.data).to.not.be.null
-    })
-  })
-
-  // Test Case 02: GET single user yang ada (id=2)
-  // Tujuan: Memastikan endpoint GET /users/2 berhasil mengembalikan user dengan ID 2
-  it('TC02 - GET Single User Found', () => {
-    cy.request('GET', 'https://reqres.in/api/users/2').then((response) => {
-      expect(response.status).to.eq(200)
-      expect(response.body.data.id).to.eq(2)
-    })
-  })
-
-  // Test Case 03: GET single user yang tidak ada (id=23)
-  // Tujuan: Memastikan endpoint GET /users/23 mengembalikan response 404 karena data tidak ditemukan
-  it('TC03 - GET Single User Not Found', () => {
-    cy.request({ method: 'GET', url: 'https://reqres.in/api/users/23', failOnStatusCode: false })
-      .then((response) => {
-        expect(response.status).to.eq(404)
-      })
-  })
-
-  // Test Case 04: POST create user baru
-  // Tujuan: Memastikan endpoint POST /users dapat membuat user baru dan mengembalikan status 201
-  it('TC04 - POST Create User', () => {
-    cy.request('POST', 'https://reqres.in/api/users', {
-      name: 'John Doe',
-      job: 'QA Engineer'
-    }).then((response) => {
-      expect(response.status).to.eq(201)
-      expect(response.body.name).to.eq('John Doe')
-    })
-  })
-
-  // Test Case 05: PUT update user
-  // Tujuan: Memastikan endpoint PUT /users/2 berhasil memperbarui data user dengan status 200
-  it('TC05 - PUT Update User', () => {
-    cy.request('PUT', 'https://reqres.in/api/users/2', {
-      name: 'Jane Doe',
-      job: 'Software Engineer'
-    }).then((response) => {
-      expect(response.status).to.eq(200)
-      expect(response.body.name).to.eq('Jane Doe')
-    })
-  })
-
-  // Test Case 06: PATCH update sebagian user
-  // Tujuan: Memastikan endpoint PATCH /users/2 berhasil memperbarui sebagian data user dengan status 200
-  it('TC06 - PATCH Update User', () => {
-    cy.request('PATCH', 'https://reqres.in/api/users/2', {
-      job: 'Product Manager'
-    }).then((response) => {
-      expect(response.status).to.eq(200)
-      expect(response.body.job).to.eq('Product Manager')
-    })
-  })
-
-  // Test Case 07: DELETE user
-  // Tujuan: Memastikan endpoint DELETE /users/2 berhasil menghapus user dengan response status 204
-  it('TC07 - DELETE User', () => {
-    cy.request('DELETE', 'https://reqres.in/api/users/2').then((response) => {
-      expect(response.status).to.eq(204)
-    })
-  })
-
-  // Test Case 08: POST register user valid
-  // Tujuan: Memastikan endpoint POST /register dapat mendaftarkan user valid dengan status 200
-  it('TC08 - POST Register Successful', () => {
-    cy.request('POST', 'https://reqres.in/api/register', {
-      email: 'eve.holt@reqres.in',
-      password: 'pistol'
-    }).then((response) => {
-      expect(response.status).to.eq(200)
-      expect(response.body).to.have.property('token')
-    })
-  })
-
-  // Test Case 09: POST register user gagal (tanpa password)
-  // Tujuan: Memastikan endpoint POST /register gagal jika password kosong, dengan status 400
-  it('TC09 - POST Register Unsuccessful', () => {
+  // Test untuk mengambil daftar pengguna pada halaman 1 menggunakan metode GET
+  it('GET list users (page 1)', () => {
     cy.request({
-      method: 'POST',
-      url: 'https://reqres.in/api/register',
-      body: { email: 'sydney@fife' },
+      method: 'GET',
+      url: `${baseUrl}/users?page=1`,
+      headers
+    }).then((response) => {
+      // Verifikasi status response adalah 200 (OK)
+      expect(response.status).to.eq(200);
+      // Verifikasi bahwa data yang diterima adalah sebuah array
+      expect(response.body.data).to.be.an('array');
+    });
+  });
+
+  // Test untuk mengambil data satu pengguna berdasarkan ID 2 menggunakan metode GET
+  it('GET single user', () => {
+    cy.request({
+      method: 'GET',
+      url: `${baseUrl}/users/2`,
+      headers
+    }).then((response) => {
+      // Pastikan status response adalah 200 (OK)
+      expect(response.status).to.eq(200);
+      // Pastikan data pengguna yang diterima memiliki ID 2
+      expect(response.body.data.id).to.eq(2);
+    });
+  });
+
+  // Test untuk mengambil data pengguna dengan ID yang tidak ada (23), seharusnya menghasilkan 404 Not Found
+  it('GET single user not found', () => {
+    cy.request({
+      method: 'GET',
+      url: `${baseUrl}/users/23`,
+      headers,
+      // Memungkinkan Cypress untuk tidak gagal otomatis ketika status bukan 2xx
       failOnStatusCode: false
     }).then((response) => {
-      expect(response.status).to.eq(400)
-      expect(response.body.error).to.eq('Missing password')
-    })
-  })
+      // Pastikan status response adalah 404 (Not Found)
+      expect(response.status).to.eq(404);
+    });
+  });
 
-  // Test Case 10: POST login user valid
-  // Tujuan: Memastikan endpoint POST /login berhasil jika email dan password valid
-  it('TC10 - POST Login Successful', () => {
-    cy.request('POST', 'https://reqres.in/api/login', {
-      email: 'eve.holt@reqres.in',
-      password: 'cityslicka'
-    }).then((response) => {
-      expect(response.status).to.eq(200)
-      expect(response.body).to.have.property('token')
-    })
-  })
-
-  // Test Case 11: POST login user gagal (tanpa password)
-  // Tujuan: Memastikan endpoint POST /login gagal jika password kosong, dengan status 400
-  it('TC11 - POST Login Unsuccessful', () => {
+  // Test untuk membuat pengguna baru menggunakan metode POST dengan data nama dan pekerjaan
+  it('POST create user', () => {
     cy.request({
       method: 'POST',
-      url: 'https://reqres.in/api/login',
-      body: { email: 'peter@klaven' },
+      url: `${baseUrl}/users`,
+      headers,
+      body: {
+        name: 'Neo',
+        job: 'The One'
+      }
+    }).then((response) => {
+      // Pastikan status response adalah 201 (Created)
+      expect(response.status).to.eq(201);
+      // Pastikan response body mengandung properti 'id' yang menandakan pengguna berhasil dibuat
+      expect(response.body).to.have.property('id');
+    });
+  });
+
+  // Test untuk memperbarui seluruh data pengguna dengan ID 2 menggunakan metode PUT
+  it('PUT update user', () => {
+    cy.request({
+      method: 'PUT',
+      url: `${baseUrl}/users/2`,
+      headers,
+      body: {
+        name: 'Morpheus',
+        job: 'Zion Leader'
+      }
+    }).then((response) => {
+      // Pastikan status response adalah 200 (OK) sebagai tanda update berhasil
+      expect(response.status).to.eq(200);
+    });
+  });
+
+  // Test untuk memperbarui sebagian data pengguna dengan ID 2 menggunakan metode PATCH
+  it('PATCH update user', () => {
+    cy.request({
+      method: 'PATCH',
+      url: `${baseUrl}/users/2`,
+      headers,
+      body: {
+        job: 'Updated Job'
+      }
+    }).then((response) => {
+      // Pastikan status response adalah 200 (OK) sebagai tanda update berhasil
+      expect(response.status).to.eq(200);
+    });
+  });
+
+  // Test untuk menghapus pengguna dengan ID 2 menggunakan metode DELETE
+  it('DELETE user', () => {
+    cy.request({
+      method: 'DELETE',
+      url: `${baseUrl}/users/2`,
+      headers
+    }).then((response) => {
+      // Pastikan status response adalah 204 (No Content) sebagai tanda penghapusan berhasil
+      expect(response.status).to.eq(204);
+    });
+  });
+
+  // Test untuk melakukan registrasi pengguna dengan data lengkap menggunakan metode POST yang berhasil
+  it('POST register success', () => {
+    cy.request({
+      method: 'POST',
+      url: `${baseUrl}/register`,
+      headers,
+      body: {
+        email: 'eve.holt@reqres.in',
+        password: 'pistol'
+      }
+    }).then((response) => {
+      // Pastikan status response adalah 200 (OK)
+      expect(response.status).to.eq(200);
+      // Pastikan response body mengandung properti 'token' sebagai tanda registrasi berhasil
+      expect(response.body).to.have.property('token');
+    });
+  });
+
+  // Test untuk melakukan registrasi pengguna dengan data tidak lengkap (tanpa password) yang gagal
+  it('POST register failed', () => {
+    cy.request({
+      method: 'POST',
+      url: `${baseUrl}/register`,
+      headers,
+      body: {
+        email: 'sydney@fife'
+      },
+      // Memungkinkan test untuk menangani response error (400)
       failOnStatusCode: false
     }).then((response) => {
-      expect(response.status).to.eq(400)
-      expect(response.body.error).to.eq('Missing password')
-    })
-  })
+      // Pastikan status response adalah 400 (Bad Request)
+      expect(response.status).to.eq(400);
+      // Pastikan response body berisi pesan error 'Missing password'
+      expect(response.body.error).to.eq('Missing password');
+    });
+  });
 
-  // Test Case 12: GET list resource
-  // Tujuan: Memastikan endpoint GET /unknown mengembalikan daftar resource dengan status 200
-  it('TC12 - GET List Resource', () => {
-    cy.request('GET', 'https://reqres.in/api/unknown').then((response) => {
-      expect(response.status).to.eq(200)
-      expect(response.body.data).to.be.an('array')
-    })
-  })
+  // Test untuk login pengguna dengan data lengkap menggunakan metode POST yang berhasil
+  it('POST login success', () => {
+    cy.request({
+      method: 'POST',
+      url: `${baseUrl}/login`,
+      headers,
+      body: {
+        email: 'eve.holt@reqres.in',
+        password: 'cityslicka'
+      }
+    }).then((response) => {
+      // Pastikan status response adalah 200 (OK)
+      expect(response.status).to.eq(200);
+      // Pastikan response body mengandung properti 'token' sebagai tanda login berhasil
+      expect(response.body).to.have.property('token');
+    });
+  });
 
-  // Test Case 13: GET single resource yang ada
-  // Tujuan: Memastikan endpoint GET /unknown/2 berhasil mengembalikan resource id=2
-  it('TC13 - GET Single Resource Found', () => {
-    cy.request('GET', 'https://reqres.in/api/unknown/2').then((response) => {
-      expect(response.status).to.eq(200)
-      expect(response.body.data.id).to.eq(2)
-    })
-  })
+  // Test untuk login pengguna dengan data tidak lengkap (tanpa password) yang gagal
+  it('POST login failed', () => {
+    cy.request({
+      method: 'POST',
+      url: `${baseUrl}/login`,
+      headers,
+      body: {
+        email: 'peter@klaven'
+      },
+      // Memungkinkan test untuk menangani response error (400)
+      failOnStatusCode: false
+    }).then((response) => {
+      // Pastikan status response adalah 400 (Bad Request)
+      expect(response.status).to.eq(400);
+      // Pastikan response body berisi pesan error 'Missing password'
+      expect(response.body.error).to.eq('Missing password');
+    });
+  });
 
-  // Test Case 14: GET single resource tidak ada
-  // Tujuan: Memastikan endpoint GET /unknown/23 mengembalikan status 404 jika resource tidak ditemukan
-  it('TC14 - GET Single Resource Not Found', () => {
-    cy.request({ method: 'GET', url: 'https://reqres.in/api/unknown/23', failOnStatusCode: false })
-      .then((response) => {
-        expect(response.status).to.eq(404)
-      })
-  })
-
-  // Test Case 15: GET delayed response
-  // Tujuan: Memastikan endpoint GET /users?delay=3 memberikan respon setelah delay dengan status 200
-  it('TC15 - GET Delayed Response', () => {
-    cy.request('GET', 'https://reqres.in/api/users?delay=3').then((response) => {
-      expect(response.status).to.eq(200)
-      expect(response.body.data).to.not.be.null
-    })
-  })
-})
+  // Test untuk mengambil daftar pengguna dengan waktu respon tertunda (delay 3 detik)
+  it('GET delayed response', () => {
+    cy.request({
+      method: 'GET',
+      url: `${baseUrl}/users?delay=3`,
+      headers
+    }).then((response) => {
+      // Pastikan status response adalah 200 (OK)
+      expect(response.status).to.eq(200);
+      // Pastikan data yang diterima berupa array
+      expect(response.body.data).to.be.an('array');
+    });
+  });
+});
