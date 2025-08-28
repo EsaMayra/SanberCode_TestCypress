@@ -1,5 +1,3 @@
-// cypress/e2e/Login.cy.js
-
 describe('OrangeHRM Login Feature dengan Intercept', () => {
 
   // TC01 - Berhasil Login dengan Valid Credentials
@@ -98,3 +96,4 @@ describe('OrangeHRM Login Feature dengan Intercept', () => {
       .and('contain', 'Required');
   });
 });
+
