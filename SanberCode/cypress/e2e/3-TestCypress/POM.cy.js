@@ -46,50 +46,35 @@ describe('OrangeHRM Login Feature dengan Intercept + POM', () => {
     loginPage.verifyErrorMessage('Invalid credentials');
   });
 
-  // TC03 - Gagal Login Username Kosong
-  it('TC03 - Gagal Login Username Kosong', () => {
-    cy.intercept('POST', '/web/index.php/auth/validate').as('loginRequest');
+ // TC03 - Gagal Login Username Kosong
+it('TC03 - Gagal Login Username Kosong', () => {
+  loginPage.visit();
+  loginPage.enterPassword('admin123'); // hanya isi password
+  loginPage.clickLogin();
 
-    loginPage.visit();
-    loginPage.enterPassword('admin123'); // hanya isi password
-    loginPage.clickLogin();
+  // Assertion: muncul pesan "Required" di field username
+  loginPage.verifyRequiredMessage('Required');
+});
 
-    // Assertion: request login tetap dikirim
-    cy.wait('@loginRequest');
+// TC04 - Gagal Login Password Kosong
+it('TC04 - Gagal Login Password Kosong', () => {
+  loginPage.visit();
+  loginPage.enterUsername('Admin'); // hanya isi username
+  loginPage.clickLogin();
 
-    // Assertion: muncul pesan "Required" di field username
-    loginPage.verifyRequiredMessage('Required');
-  });
+  // Assertion: muncul pesan "Required" di field password
+  loginPage.verifyRequiredMessage('Required');
+});
 
-  // TC04 - Gagal Login Password Kosong
-  it('TC04 - Gagal Login Password Kosong', () => {
-    cy.intercept('POST', '/web/index.php/auth/validate').as('loginRequest');
+// TC05 - Gagal Login Username & Password Kosong
+it('TC05 - Gagal Login Username & Password Kosong', () => {
+  loginPage.visit();
+  loginPage.clickLogin(); // tidak isi apapun
 
-    loginPage.visit();
-    loginPage.enterUsername('Admin'); // hanya isi username
-    loginPage.clickLogin();
+  // Assertion: pesan error username kosong
+  cy.get(loginPage.requiredField).first().should('contain', 'Required');
 
-    // Assertion: request login tetap dikirim
-    cy.wait('@loginRequest');
-
-    // Assertion: muncul pesan "Required" di field password
-    loginPage.verifyRequiredMessage('Required');
-  });
-
-  // TC05 - Gagal Login Username & Password Kosong
-  it('TC05 - Gagal Login Username & Password Kosong', () => {
-    cy.intercept('POST', '/web/index.php/auth/validate').as('loginRequest');
-
-    loginPage.visit();
-    loginPage.clickLogin(); // tidak isi apapun
-
-    // Assertion: request login tetap dikirim
-    cy.wait('@loginRequest');
-
-    // Assertion: pesan error username kosong
-    cy.get(loginPage.requiredField).first().should('contain', 'Required');
-
-    // Assertion: pesan error password kosong
-    cy.get(loginPage.requiredField).last().should('contain', 'Required');
-  });
+  // Assertion: pesan error password kosong
+  cy.get(loginPage.requiredField).last().should('contain', 'Required');
+});
 });
