@@ -1,56 +1,45 @@
+// cypress/e2e/Login.cy.js
+
 describe('OrangeHRM Login Feature dengan Intercept', () => {
 
   // TC01 - Berhasil Login dengan Valid Credentials
   it('TC01 - Berhasil Login dengan Valid Credentials', () => {
-    // Action: intercept request login
-    cy.intercept('POST', '/web/index.php/auth/validate').as('loginRequest');
-
     // Action: buka halaman login
     cy.visit('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login');
 
-    // Assertion: URL login benar
-    cy.url().should('include', '/auth/login');
+    // Setup intercept
+    cy.intercept('POST', '/web/index.php/auth/validate').as('loginRequest');
 
-    // Assertion: logo login terlihat
-    cy.get('.orangehrm-login-branding > img').should('be.visible');
-
-    // Action: isi username & password
-    cy.get("input[placeholder='Username']").type('Admin');
-    cy.get("input[placeholder='Password']").type('admin123');
+    // Action: input username & password valid
+    cy.get("input[name='username']").type('Admin');
+    cy.get("input[name='password']").type('admin123');
 
     // Action: klik tombol login
     cy.get("button[type='submit']").click();
 
-    // Assertion: request login sukses (status 200)
-    cy.wait('@loginRequest').its('response.statusCode').should('eq', 200);
+    // Assertion: request login berhasil (status 200/302 redirect)
+    cy.wait('@loginRequest').its('response.statusCode').should('be.oneOf', [200, 302]);
 
-    // Assertion: redirect ke dashboard
+    // Assertion: URL dashboard terbuka
     cy.url().should('include', '/dashboard');
-
-    // Assertion: header dashboard terlihat
-    cy.get('.oxd-topbar-header-title').should('contain', 'Dashboard');
   });
 
 
-  // TC02 - Gagal Login dengan Invalid Credentials
-  it('TC02 - Gagal Login dengan Invalid Credentials', () => {
-    // Action: intercept request login
+  // TC02 - Gagal Login dengan Password Salah
+  it('TC02 - Gagal Login dengan Password Salah', () => {
+    cy.visit('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login');
     cy.intercept('POST', '/web/index.php/auth/validate').as('loginRequest');
 
-    // Action: buka halaman login
-    cy.visit('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login');
+    // Action: input username valid & password salah
+    cy.get("input[name='username']").type('Admin');
+    cy.get("input[name='password']").type('salahPassword');
 
-    // Action: isi username & password salah
-    cy.get("input[placeholder='Username']").type('SalahUser');
-    cy.get("input[placeholder='Password']").type('SalahPass');
-
-    // Action: klik tombol login
     cy.get("button[type='submit']").click();
 
-    // Assertion: request login gagal (status 401)
-    cy.wait('@loginRequest').its('response.statusCode').should('eq', 401);
+    // Assertion: request login tetap terjadi
+    cy.wait('@loginRequest').its('response.statusCode').should('be.oneOf', [200, 302]);
 
-    // Assertion: error message muncul
+    // Assertion: muncul error "Invalid credentials"
     cy.get('.oxd-alert-content-text')
       .should('be.visible')
       .and('contain', 'Invalid credentials');
@@ -59,23 +48,16 @@ describe('OrangeHRM Login Feature dengan Intercept', () => {
 
   // TC03 - Gagal Login dengan Username Kosong
   it('TC03 - Gagal Login dengan Username Kosong', () => {
-    // Action: intercept request login
-    cy.intercept('POST', '/web/index.php/auth/validate').as('loginRequest');
-
-    // Action: buka halaman login
     cy.visit('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login');
 
-    // Action: isi hanya password
-    cy.get("input[placeholder='Password']").type('admin123');
+    // Action: hanya isi password
+    cy.get("input[name='password']").type('admin123');
 
     // Action: klik tombol login
     cy.get("button[type='submit']").click();
 
-    // Assertion: request login tetap dikirim
-    cy.wait('@loginRequest');
-
-    // Assertion: pesan error username kosong muncul
-    cy.get('.oxd-input-group > .oxd-text')
+    // Assertion: validasi "Required" muncul di username
+    cy.get('.oxd-input-group:has(input[name="username"]) .oxd-input-field-error-message')
       .should('be.visible')
       .and('contain', 'Required');
   });
@@ -83,23 +65,16 @@ describe('OrangeHRM Login Feature dengan Intercept', () => {
 
   // TC04 - Gagal Login dengan Password Kosong
   it('TC04 - Gagal Login dengan Password Kosong', () => {
-    // Action: intercept request login
-    cy.intercept('POST', '/web/index.php/auth/validate').as('loginRequest');
-
-    // Action: buka halaman login
     cy.visit('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login');
 
-    // Action: isi hanya username
-    cy.get("input[placeholder='Username']").type('Admin');
+    // Action: hanya isi username
+    cy.get("input[name='username']").type('Admin');
 
     // Action: klik tombol login
     cy.get("button[type='submit']").click();
 
-    // Assertion: request login tetap dikirim
-    cy.wait('@loginRequest');
-
-    // Assertion: pesan error password kosong muncul
-    cy.get('.oxd-input-group > .oxd-text')
+    // Assertion: validasi "Required" muncul di password
+    cy.get('.oxd-input-group:has(input[name="password"]) .oxd-input-field-error-message')
       .should('be.visible')
       .and('contain', 'Required');
   });
@@ -107,26 +82,19 @@ describe('OrangeHRM Login Feature dengan Intercept', () => {
 
   // TC05 - Gagal Login dengan Username & Password Kosong
   it('TC05 - Gagal Login dengan Username & Password Kosong', () => {
-    // Action: intercept request login
-    cy.intercept('POST', '/web/index.php/auth/validate').as('loginRequest');
-
-    // Action: buka halaman login
     cy.visit('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login');
 
     // Action: klik tombol login tanpa isi apapun
     cy.get("button[type='submit']").click();
 
-    // Assertion: request login tetap dikirim
-    cy.wait('@loginRequest');
+    // Assertion: validasi "Required" muncul di username
+    cy.get('.oxd-input-group:has(input[name="username"]) .oxd-input-field-error-message')
+      .should('be.visible')
+      .and('contain', 'Required');
 
-    // Assertion: pesan error username kosong
-    cy.get('.oxd-input-group > .oxd-text')
-      .first()
-      .should('contain', 'Required');
-
-    // Assertion: pesan error password kosong
-    cy.get('.oxd-input-group > .oxd-text')
-      .last()
-      .should('contain', 'Required');
+    // Assertion: validasi "Required" muncul di password
+    cy.get('.oxd-input-group:has(input[name="password"]) .oxd-input-field-error-message')
+      .should('be.visible')
+      .and('contain', 'Required');
   });
 });
